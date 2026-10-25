@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PlayField } from "@/components/PlayField";
-import { AVATARS, DESTINATIONS, GAME_TAGLINE, GAME_TITLE, levelCoat } from "@/game/content";
+import { AVATARS, DESTINATIONS, GAME_TAGLINE, GAME_TITLE, levelCoat, type Avatar } from "@/game/content";
 import { dailySeed, denverDay } from "@/game/daily";
 import { validateName } from "@/game/names";
 import { bestKey, defaultSave, destinationGate, orderedDestinations, practiceReady, sanitizeSave, SAVE_KEY, type Save } from "@/game/progress";
@@ -11,6 +11,66 @@ import { createRun } from "@/game/sim";
 import type { Bucket, RunState } from "@/game/types";
 
 type Screen = "map" | "prep" | "play" | "board";
+
+function Bust({ avatar }: { avatar: Avatar }) {
+  const ink = "#1c3144";
+  return (
+    <svg className="bust" viewBox="0 0 48 48" aria-hidden="true">
+      <ellipse cx="24" cy="45" rx="12" ry="3" fill="rgba(28,49,68,0.14)" />
+      <rect x="11" y="27" width="26" height="15" rx="8" fill={avatar.shirt} stroke={ink} strokeWidth="2" />
+      {avatar.prop === "apron" && (
+        <rect x="18" y="30" width="12" height="11" rx="2.5" fill="#f4e6c8" stroke={ink} strokeWidth="1.5" />
+      )}
+      <circle cx="24" cy="18" r="9" fill={avatar.skin} stroke={ink} strokeWidth="2" />
+      <Hat avatar={avatar} />
+      <circle cx="20.5" cy="18.2" r="1.25" fill={ink} />
+      <circle cx="27.5" cy="18.2" r="1.25" fill={ink} />
+      {avatar.prop === "glasses" && (
+        <g fill="none" stroke={avatar.accent} strokeWidth="1.7">
+          <rect x="14.2" y="15.2" width="7.6" height="5.2" rx="1.2" />
+          <rect x="26.2" y="15.2" width="7.6" height="5.2" rx="1.2" />
+          <path d="M21.8 17.6h4.4" />
+        </g>
+      )}
+    </svg>
+  );
+}
+
+function Hat({ avatar }: { avatar: Avatar }) {
+  const ink = "#1c3144";
+  if (avatar.prop === "cap") {
+    return <ellipse cx="24" cy="11" rx="11" ry="3.2" fill="#f7f3ea" stroke={ink} strokeWidth="1.8" />;
+  }
+  if (avatar.prop === "helmet" || avatar.prop === "bike") {
+    return <path d="M14 17.5C14.4 9 18 6 24 6s9.6 3 10 11.5" fill={avatar.accent} stroke={ink} strokeWidth="1.7" />;
+  }
+  if (avatar.prop === "conductor") {
+    return (
+      <g>
+        <rect x="16" y="6.5" width="16" height="5" rx="1.4" fill="#1d3557" stroke={ink} strokeWidth="1.4" />
+        <ellipse cx="24" cy="11.5" rx="12" ry="2.5" fill="#1d3557" stroke={ink} strokeWidth="1.4" />
+      </g>
+    );
+  }
+  if (avatar.prop === "toque") {
+    return <path d="M17 13.5C17 6 20 3.5 24 3.5S31 6 31 13.5" fill="#f7f3ea" stroke={ink} strokeWidth="1.7" />;
+  }
+  if (avatar.prop === "pilot") {
+    return (
+      <g>
+        <path d="M15 14c.8-6.5 4.2-9.5 9-9.5s8.2 3 9 9.5" fill="#1d3557" stroke={ink} strokeWidth="1.5" />
+        <path d="M27 13.2h10.5l-2.2 3.2H27z" fill="#1d3557" stroke={ink} strokeWidth="1.3" />
+      </g>
+    );
+  }
+  if (avatar.prop === "ranger") {
+    return <ellipse cx="24" cy="11" rx="14" ry="2.8" fill="#606c38" stroke={ink} strokeWidth="1.5" />;
+  }
+  if (avatar.prop === "beanie") {
+    return <path d="M14.5 16C15 8 18.5 4.5 24 4.5S33 8 33.5 16" fill="#1d3557" stroke={ink} strokeWidth="1.6" />;
+  }
+  return null;
+}
 
 export function Shell() {
   const [save, setSave] = useState<Save>(defaultSave);
@@ -89,22 +149,51 @@ export function Shell() {
 
   const avatar = AVATARS.find((item) => item.id === save.avatarId) ?? AVATARS[0]!;
   const place = DESTINATIONS.find((item) => item.id === destination) ?? DESTINATIONS[0]!;
+  const route = orderedDestinations().map((stop, index) => ({
+    stop,
+    index,
+    gate: destinationGate(stop.id, save),
+    best: save.bests[bestKey(stop.id, levelCoat(stop.id).format, "free")],
+  }));
+  const featureId =
+    route.find((item) => item.gate.open && !save.cleared.includes(item.stop.id))?.stop.id ??
+    [...route].reverse().find((item) => item.gate.open)?.stop.id;
 
   return (
     <main className="phone">
       <div className="rotate">Turn the phone upright. The lane is a portrait.</div>
       {screen === "map" && (
-        <section className="scroll">
+        <section className="screen">
+          <div className="scroll">
           <header className="mast">
-            <p className="eyebrow">A two-minute shooter</p>
+            <p className="eyebrow">A short lane shooter</p>
             <h1>{GAME_TITLE}</h1>
             <p>{GAME_TAGLINE}</p>
           </header>
           <ol className="route">
-            {orderedDestinations().map((stop, index) => {
-              const gate = destinationGate(stop.id, save);
-              const best = save.bests[bestKey(stop.id, levelCoat(stop.id).format, "free")];
-              return (
+            {route.map(({ stop, index, gate, best }) =>
+              stop.id === featureId ? (
+                <li key={stop.id}>
+                  <button
+                    className="ticket"
+                    style={{ background: `linear-gradient(180deg, ${stop.sky[0]} 0%, ${stop.sky[1]} 58%, #fff 100%)` }}
+                    onClick={() => {
+                      setDestination(stop.id);
+                      setScreen("prep");
+                    }}
+                  >
+                    <span className="ticket-bar" style={{ background: stop.accent }} aria-hidden="true" />
+                    <span className="watermark" aria-hidden="true">{index + 1}</span>
+                    <span className="ticket-top">
+                      <em>{stop.region}</em>
+                      {best != null && <span className="stamp">Best {formatScore(best)}</span>}
+                    </span>
+                    <strong>{stop.name}</strong>
+                    <small>{stop.blurb}</small>
+                    <span className="ticket-go">Choose who holds it</span>
+                  </button>
+                </li>
+              ) : (
                 <li key={stop.id}>
                   <button
                     className={`stop ${gate.tone}`}
@@ -119,25 +208,21 @@ export function Shell() {
                       <strong>{stop.name}</strong>
                       <em>{stop.region}</em>
                       <small>{gate.open ? stop.blurb : gate.reason}</small>
-                      {best != null && <small>Best {formatScore(best)}</small>}
+                      {best != null && <small className="best">Best {formatScore(best)}</small>}
                     </span>
                   </button>
                 </li>
-              );
-            })}
+              ),
+            )}
           </ol>
-          <div className="row-actions">
-            <button className="ghost" onClick={() => setScreen("board")}>Leaderboard</button>
-            <button className="ghost" onClick={() => setSave((prev) => ({ ...prev, muted: !prev.muted }))}>
-              {save.muted ? "Sound off" : "Sound on"}
-            </button>
-          </div>
           <details className="playtest">
             <summary>Playtest switches</summary>
+            {/* iOS Chrome stamps __gCrUniqueID onto inputs before hydration. */}
             <label>
               <input
                 type="checkbox"
                 checked={save.unlockAll}
+                suppressHydrationWarning
                 onChange={(event) => setSave((prev) => ({ ...prev, unlockAll: event.target.checked }))}
               />
               Unlock Colorado and Maryland without clearing
@@ -146,6 +231,7 @@ export function Shell() {
               <input
                 type="checkbox"
                 checked={save.holdTravel}
+                suppressHydrationWarning
                 onChange={(event) => setSave((prev) => ({ ...prev, holdTravel: event.target.checked }))}
               />
               Hold Paris and Amsterdam the way a paid stop would
@@ -154,19 +240,28 @@ export function Shell() {
               <input
                 type="checkbox"
                 checked={save.showHitboxes}
+                suppressHydrationWarning
                 onChange={(event) => setSave((prev) => ({ ...prev, showHitboxes: event.target.checked }))}
               />
               Show hitboxes
             </label>
             <p>Nothing here charges anyone. The hold is only to feel the lock.</p>
           </details>
+          </div>
+          <div className="dock utility">
+            <button className="ghost" onClick={() => setScreen("board")}>Leaderboard</button>
+            <button className="ghost" onClick={() => setSave((prev) => ({ ...prev, muted: !prev.muted }))}>
+              {save.muted ? "Sound off" : "Sound on"}
+            </button>
+          </div>
         </section>
       )}
 
       {screen === "prep" && (
-        <section className="scroll">
+        <section className="screen">
+          <div className="scroll">
           <button className="back" onClick={() => setScreen("map")}>All stops</button>
-          <header className="mast">
+          <header className="mast place-mast" style={{ borderBottomColor: place.accent }}>
             <p className="eyebrow">{place.region}</p>
             <h1>{place.name}</h1>
             <p>{place.blurb}</p>
@@ -174,19 +269,26 @@ export function Shell() {
           <fieldset>
             <legend>Who is holding the lane</legend>
             <div className="cast">
-              {AVATARS.map((item) => (
-                <button
-                  key={item.id}
-                  className={save.avatarId === item.id ? "cast-card on" : "cast-card"}
-                  onClick={() => setSave((prev) => ({ ...prev, avatarId: item.id }))}
-                >
-                  <i style={{ background: item.shirt }} />
-                  <strong>{item.name}</strong>
-                  <small>{item.blurb}</small>
-                </button>
-              ))}
+              {AVATARS.map((item) => {
+                const selected = save.avatarId === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    className={selected ? "cast-card on" : "cast-card"}
+                    aria-pressed={selected}
+                    onClick={() => setSave((prev) => ({ ...prev, avatarId: item.id }))}
+                  >
+                    <Bust avatar={item} />
+                    <span>
+                      <strong>{item.name}</strong>
+                      <small>{item.blurb}</small>
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </fieldset>
+          </div>
           <div className="dock">
             <button className="primary" onClick={() => begin(false, false)}>Play {place.name}</button>
             <button className="secondary" onClick={() => begin(false, true)}>Today&apos;s lane</button>
@@ -227,7 +329,7 @@ export function Shell() {
           {paused && !result && (
             <div className="sheet">
               <h2>Paused</h2>
-              <p>Arrows or A and D work on a keyboard. On a phone, drag the lower half.</p>
+              <p>Arrows or A and D aim. On a phone, drag the lower half.</p>
               <button className="primary" onClick={() => setPaused(false)}>Resume</button>
               <button
                 className="ghost"
@@ -327,7 +429,6 @@ function Results({
       )}
       <ul className="breakdown">
         <li>Kills {formatScore(state.parts.fromKills)}</li>
-        <li>Boss time {formatScore(state.parts.fromBoss)}</li>
         <li>Hearts left {formatScore(state.parts.fromHearts)}</li>
         <li>Best chain {state.parts.bestChain}</li>
       </ul>
@@ -344,7 +445,7 @@ function Results({
         >
           <label>
             Name on the board
-            <input value={name} maxLength={16} onChange={(event) => setName(event.target.value)} autoComplete="nickname" />
+            <input value={name} maxLength={16} suppressHydrationWarning onChange={(event) => setName(event.target.value)} autoComplete="nickname" />
           </label>
           {error && <p className="error">{error}</p>}
           <button className="secondary" type="submit" disabled={sending}>{sending ? "Posting" : "Post score"}</button>

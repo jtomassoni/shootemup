@@ -27,7 +27,7 @@ export function card() {
         <div style={{ position: "absolute", left: 72, top: 64, display: "flex", flexDirection: "column", color: "#1c3144" }}>
           <div style={{ fontSize: 28, letterSpacing: 4, color: "#e76f51", fontWeight: 700 }}>A TWO-MINUTE SHOOTER</div>
           <div style={{ fontSize: 92, fontWeight: 800, letterSpacing: -3, lineHeight: 0.9 }}>Hold the Lane</div>
-          <div style={{ fontSize: 32, marginTop: 12, maxWidth: 640 }}>Slide, shoot straight, and take the weapon before it gets away.</div>
+          <div style={{ fontSize: 32, marginTop: 12, maxWidth: 640 }}>Hold the center, aim, and take the weapon before it gets away.</div>
         </div>
       </div>
     ),

@@ -195,7 +195,7 @@ export function PlayField({
           if (event.buttons === 0 && event.pointerType === "mouse") return;
           point(event);
         }}
-        aria-label="The lane. Slide a finger on the lower half of the screen."
+        aria-label="The lane. Drag the lower half to aim."
       />
       {booting && <p className="loading">Bringing everyone onto the road…</p>}
       </div>

@@ -10,8 +10,8 @@ import { claimDecision, validateName } from "../src/game/names";
 import { destinationGate, practiceReady, defaultSave } from "../src/game/progress";
 import { mulberry32 } from "../src/game/rng";
 import { isPlausibleScore, keepBetter, multiplierFor } from "../src/game/score";
-import { createRun, step } from "../src/game/sim";
-import { PLAYER_R, W, type RunState, type SpawnEvent } from "../src/game/types";
+import { createRun, step, timerLabel } from "../src/game/sim";
+import { PLAYER_R, PLAYER_Y, W, type RunState, type SpawnEvent } from "../src/game/types";
 
 describe("weapons tell the truth", () => {
   it("compares a pistol with a spread using the real multiplier", () => {
@@ -40,14 +40,17 @@ describe("schedule", () => {
     const first = buildSchedule(mulberry32(42), "colorado", "push", false);
     const second = buildSchedule(mulberry32(42), "colorado", "push", false);
     assert.deepEqual(first.events, second.events);
-    assert.equal(first.setpieces.at(-1)?.final, true);
+    assert.equal(first.setpieces.length, 0);
     for (const destination of ["colorado", "maryland"]) {
       for (const format of ["push", "gauntlet"] as const) {
         for (let seed = 1; seed <= 24; seed += 1) {
           const schedule = buildSchedule(mulberry32(seed), destination, format, seed % 2 === 0);
           assertSafeBeats(schedule.events);
           assert.ok(schedule.events.some((event) => event.type === "crate"));
-          assert.equal(schedule.setpieces.filter((piece) => piece.final).length, 1);
+          assert.equal(schedule.setpieces.length, 0);
+          const last = schedule.events.at(-1)!;
+          assert.ok(last.t > 80 && last.t <= 90, `${destination} ${format} seed ${seed} ends at ${last.t}`);
+          assert.ok(schedule.events.some((event) => event.type === "mob" && event.t < 8));
         }
       }
     }
@@ -55,9 +58,25 @@ describe("schedule", () => {
 });
 
 describe("simulation", () => {
+  it("stays centered and aims where the pointer sits", () => {
+    const state = createRun(run(9));
+    step(state, 0.35, { pointerX: 36, left: false, right: false });
+    state.bullets = [];
+    step(state, 0.25, { pointerX: 36, left: false, right: false });
+    assert.equal(state.playerX, W / 2);
+    assert.ok(state.aim < -0.45);
+    const shot = state.bullets.find((bullet) => bullet.from === "player");
+    assert.ok(shot);
+    assert.ok(shot.vx < 0 && shot.vy < 0);
+    step(state, 0.55, { pointerX: null, left: false, right: true });
+    assert.ok(state.aim > 0.25);
+    assert.equal(state.playerX, W / 2);
+  });
+
   it("shoots up, claims nothing on its own, and keeps the weapon after a hit", () => {
     const state = createRun(run(7));
     step(state, 0.5, { pointerX: 80, left: false, right: false });
+    assert.equal(state.playerX, W / 2);
     assert.ok(state.bullets.some((bullet) => bullet.from === "player" && bullet.vy < 0));
     const weapon = state.weapon.id;
     const enemy = state.enemies.find((item) => item.hurts);
@@ -78,6 +97,36 @@ describe("simulation", () => {
     assert.equal(state.weapon.id, weapon);
     step(state, 0.2, { pointerX: state.playerX, left: false, right: false });
     assert.equal(state.hearts, 2);
+  });
+
+  it("wins when the scheduled enemies are gone, with no countdown", () => {
+    const state = createRun(run(11));
+    assert.equal(timerLabel(state).text, "");
+    const last = state.events.at(-1)!;
+    assert.ok(last.t > 80 && last.t <= 90);
+    state.eventIndex = state.events.length;
+    state.enemies = [];
+    state.crates = [];
+    state.bullets = [];
+    step(state, 1 / 60, idle(state.playerX));
+    assert.equal(state.status, "won");
+    assert.equal(state.parts.fromBoss, 0);
+  });
+
+  it("brings a side enemy onto a player who stays in the middle", () => {
+    const state = createRun(run(5));
+    state.events = [];
+    state.enemies = [{ ...fakeEnemy(), x: 36, originX: 36, y: 120, vy: 0, shootable: false, hp: 10, maxHp: 10 }];
+    step(state, 3, idle(W / 2));
+    assert.ok(Math.abs(state.enemies[0]!.x - W / 2) < 24);
+  });
+
+  it("holds a straight line once an enemy is about to reach the player", () => {
+    const state = createRun(run(5));
+    state.events = [];
+    state.enemies = [{ ...fakeEnemy(), x: 80, originX: 80, y: PLAYER_Y - 40, vy: 0 }];
+    step(state, 1, idle(W / 2));
+    assert.ok(Math.abs(state.enemies[0]!.x - 80) < 1);
   });
 
   it("does not drop a combo during a quiet stretch", () => {
@@ -180,12 +229,20 @@ function assertSafeBeats(events: SpawnEvent[]) {
     blocks.sort((a, b) => a[0] - b[0]);
     let cursor = 28;
     let open = false;
+    let centerOpen = false;
     for (const [start, end] of blocks) {
-      if (start > cursor) open = true;
+      if (start > cursor) {
+        open = true;
+        if (cursor < W / 2 && start > W / 2) centerOpen = true;
+      }
       cursor = Math.max(cursor, end);
     }
-    if (cursor < W - 28) open = true;
+    if (cursor < W - 28) {
+      open = true;
+      if (cursor < W / 2) centerOpen = true;
+    }
     assert.equal(open, true);
+    assert.equal(centerOpen, true);
   }
 }
 

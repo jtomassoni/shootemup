@@ -23,15 +23,14 @@ Use these as theme material. Jokes should feel personal, not like a souvenir sho
 
 A short portrait shooter in the spirit of those mobile-ad games:
 
-- The character stays along the bottom.
+- The character stays centered along the bottom, small enough to read and fully on screen.
 - Enemies, obstacles, and upgrades come down the screen.
-- The player only slides left and right.
-- The character always shoots straight ahead. There is no manual aim.
+- The character does not slide. A thumb dragged across the lower screen aims the shots.
 - A run lasts about 1–3 minutes.
 - Upgrades are ridiculous, readable, and worth thinking about.
 - Each destination has its own enemies, weapons, and jokes.
 
-Movement: a finger on the lower part of the screen sets horizontal position, so the hand does not cover the character. Upgrades may add parallel bullets, wider spreads, piercing shots, or splash damage. The player still never aims.
+Aim: a finger on the lower part of the screen sets where the shots go, so the hand does not cover the character. The character stays centered. Upgrades may add parallel bullets, wider spreads, piercing shots, or splash damage.
 
 ## What to leave out
 
@@ -49,7 +48,7 @@ Cosmetic choices, unlocked destinations, and scores do persist. Only the weapons
 
 ## A round
 
-One format: Push. You start with a weak weapon and pick up stronger ones as crates come down, so the waves start readable and get meaner over about two minutes. A crowded screen from the first second would punish the weapon you have not earned yet. Survive to the end to win.
+One format: Push. You start with a weak weapon and pick up stronger ones as crates come down, so the waves start readable and get meaner across about ninety seconds of enemies. There is no round clock. A crowded screen from the first second would punish the weapon you have not earned yet. The round ends when those enemies are gone.
 
 No bosses in this version. A round is enemies, obstacles, and upgrades. A special fight can wait until a plain round is already fun.
 
@@ -217,7 +216,7 @@ Absurd and silly is the target. Mild language is fine. No explicit adult jokes, 
 When implementation starts, build this slice:
 
 - Portrait phone layout, finger controls on the lower screen, keyboard as a fallback for desktop testing.
-- Automatic upward fire, left/right movement only.
+- Automatic fire aimed by the thumb, with the character held in the center. Keyboard arrows aim on desktop.
 - Three hearts, combo, score, pause, and mute.
 - All three art styles, all actually finished, selectable, same hitboxes.
 - Avatar select with the career-and-theme cast.

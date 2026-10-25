@@ -1,9 +1,9 @@
 import type { Archetype, FormatId, Offer, StyleId, Weapon } from "./types";
 
 export const GAME_TITLE = "Hold the Lane";
-export const GAME_TAGLINE = "Two minutes. One finger. The lane is not yours yet.";
+export const GAME_TAGLINE = "One finger. The lane is not yours yet.";
 export const GAME_DESCRIPTION =
-  "A two-minute portrait shooter. Slide along the bottom, shoot straight ahead, and grab the ridiculous weapon before it gets away.";
+  "A short portrait shooter. Hold the center, aim with one thumb, and grab the ridiculous weapon before it gets away.";
 
 export const STYLES: { id: StyleId; name: string; blurb: string }[] = [
   { id: "chunky", name: "Chunky", blurb: "Toy-bright and oversized." },
@@ -12,8 +12,8 @@ export const STYLES: { id: StyleId; name: string; blurb: string }[] = [
 ];
 
 export const FORMATS: { id: FormatId; name: string; blurb: string }[] = [
-  { id: "push", name: "Push", blurb: "A climb, then one boss on a clock." },
-  { id: "gauntlet", name: "Gauntlet", blurb: "Bosses interrupt the lane." },
+  { id: "push", name: "Push", blurb: "About ninety seconds of the lane." },
+  { id: "gauntlet", name: "Gauntlet", blurb: "About ninety seconds of the lane." },
 ];
 
 export type Avatar = {
@@ -194,31 +194,32 @@ export function singleTargetDps(weapon: Weapon): number {
 }
 
 export const ARCHETYPES: Record<string, Archetype> = {
-  "kid-goat": mob("kid-goat", "Kid goat", "goat", 22, 20, 30, 168, 100, "weave"),
+  "kid-goat": mob("kid-goat", "Shambler", "shambler", 22, 20, 30, 168, 100, "weave"),
   hail: mob("hail", "Hail", "hail", 12, 12, 14, 210, 80, "drift"),
   driver: mob("driver", "Lane driver", "driver", 26, 18, 42, 176, 140, "drift"),
-  elk: mob("elk", "Elk", "elk", 34, 26, 96, 150, 220, "elk"),
-  "espresso-cart": shooter("espresso-cart", "Espresso cart", "cart", 28, 24, 70, 150, 180, 1.7),
+  elk: mob("elk", "Brute", "brute", 34, 26, 96, 150, 220, "elk"),
+  "espresso-cart": shooter("espresso-cart", "Reacher", "reacher", 28, 24, 70, 150, 180, 1.7),
   "train-car": mob("train-car", "Cog car", "train", 70, 24, 130, 140, 260, "drift"),
   luggage: obstacle("luggage", "Loose luggage", "luggage", 24, 18, 128),
-  "pass-goat": boss("pass-goat", "Pass goat", "goat-boss", 52, 46, 980, 210, 2000, "boss", 1.35, true, "kid-goat", 4.8),
-  "hail-ram": boss("hail-ram", "Hail ram", "ram", 40, 34, 420, 200, 700, "boss", 1.45, false, "hail", 3.4),
-  "toll-elk": boss("toll-elk", "Toll elk", "elk-boss", 46, 36, 520, 230, 800, "boss", 0, true, null, 0),
-  "blue-crab": mob("blue-crab", "Blue crab", "crab", 24, 18, 34, 160, 110, "weave"),
-  seagull: shooter("seagull", "Seagull", "gull", 22, 16, 36, 172, 120, 1.55),
+  "pass-goat": boss("pass-goat", "Pass brute", "brute", 52, 46, 980, 210, 2000, "boss", 1.35, true, "kid-goat", 4.8),
+  "hail-ram": boss("hail-ram", "Hail brute", "brute", 40, 34, 420, 200, 700, "boss", 1.45, false, "hail", 3.4),
+  "toll-elk": boss("toll-elk", "Toll brute", "brute", 46, 36, 520, 230, 800, "boss", 0, true, null, 0),
+  "blue-crab": mob("blue-crab", "Crawler", "crawler", 24, 18, 34, 160, 110, "weave"),
+  seagull: shooter("seagull", "Reacher", "reacher", 22, 16, 36, 172, 120, 1.55),
   honk: mob("honk", "Harbor traffic", "car", 30, 18, 48, 198, 150, "drift"),
   skiff: mob("skiff", "Skiff", "skiff", 64, 22, 120, 142, 240, "drift"),
-  "spice-shaker": shooter("spice-shaker", "Spice shaker", "shaker", 20, 26, 64, 154, 170, 1.45),
+  "spice-shaker": shooter("spice-shaker", "Reacher", "reacher", 20, 26, 64, 154, 170, 1.45),
   pothole: obstacle("pothole", "Pothole", "pothole", 32, 16, 120),
-  "mallet-crab": boss("mallet-crab", "Mallet crab", "crab-boss", 58, 42, 1040, 200, 2000, "crab", 1.35, false, "blue-crab", 4.4),
-  "bridge-gull": boss("bridge-gull", "Bridge gull", "gull-boss", 36, 28, 420, 190, 650, "boss", 0.66, false, "seagull", 3.4),
-  "pothole-king": boss("pothole-king", "Pothole king", "hole-boss", 48, 28, 500, 150, 750, "crab", 0, false, "pothole", 0),
-  "herd-goat": mob("herd-goat", "Goat", "goat", 13, 12, 10, 156, 26, "drift"),
-  "herd-hare": mob("herd-hare", "Hare", "hare", 12, 11, 8, 156, 22, "drift"),
-  "herd-lamb": mob("herd-lamb", "Lamb", "lamb", 13, 12, 10, 156, 24, "drift"),
-  "herd-boar": mob("herd-boar", "Boar", "boar", 15, 13, 16, 156, 36, "drift"),
-  "herd-gull": mob("herd-gull", "Seagull", "gull", 13, 11, 8, 156, 22, "drift"),
-  "herd-crab": mob("herd-crab", "Crab", "crab", 13, 12, 12, 156, 28, "drift"),
+  "mallet-crab": boss("mallet-crab", "Harbor brute", "brute", 58, 42, 1040, 200, 2000, "crab", 1.35, false, "blue-crab", 4.4),
+  "bridge-gull": boss("bridge-gull", "Bridge reacher", "reacher", 36, 28, 420, 190, 650, "boss", 0.66, false, "seagull", 3.4),
+  "pothole-king": boss("pothole-king", "Pothole brute", "brute", 48, 28, 500, 150, 750, "crab", 0, false, "pothole", 0),
+  "herd-goat": mob("herd-goat", "Shambler", "shambler", 13, 12, 10, 156, 26, "drift"),
+  "herd-hare": mob("herd-hare", "Crawler", "crawler", 12, 11, 8, 156, 22, "drift"),
+  "herd-lamb": mob("herd-lamb", "Shambler", "shambler", 13, 12, 10, 156, 24, "drift"),
+  "herd-boar": mob("herd-boar", "Brute", "brute", 15, 13, 16, 156, 36, "drift"),
+  "herd-gull": mob("herd-gull", "Reacher", "reacher", 13, 11, 8, 156, 22, "drift"),
+  "herd-crab": mob("herd-crab", "Crawler", "crawler", 13, 12, 12, 156, 28, "drift"),
+  tires: barrier("tires", "Tire stack", "tires", 26, 24, 64, 148, 80),
 };
 
 function mob(
@@ -257,9 +258,22 @@ function shooter(
 }
 
 function obstacle(id: string, name: string, sprite: string, hw: number, hh: number, vy: number): Archetype {
+  return barrier(id, name, sprite, hw, hh, 1, vy, 0);
+}
+
+function barrier(
+  id: string,
+  name: string,
+  sprite: string,
+  hw: number,
+  hh: number,
+  hp: number,
+  vy: number,
+  points: number,
+): Archetype {
   return {
-    id, name, sprite, hw, hh, hp: 1, vy, points: 0, pattern: "obstacle",
-    shootable: false, hurts: true, kind: "obstacle",
+    id, name, sprite, hw, hh, hp, vy, points, pattern: "obstacle",
+    shootable: hp > 1, hurts: true, kind: "obstacle",
     shootEvery: 0, canDash: false, summon: null, summonEvery: 0, stayY: 180,
   };
 }
@@ -310,7 +324,7 @@ export type Destination = {
   wide: string[];
   fast: string[];
   obstacle: string;
-  /** One-shot bodies that fill the lane. A moving gap stays open. */
+  /** One-shot bodies that fill the lane. The center stays open under the shooter. */
   fodder: string[];
   pairs: [Offer, Offer][];
   coachOffer: Offer;
@@ -356,7 +370,7 @@ export const DESTINATIONS: Destination[] = [
     id: "colorado",
     name: "Colorado",
     region: "The pass",
-    blurb: "High road, cog railway, weather that changes its mind.",
+    blurb: "Zombies on the road. Shoot the stacks, then take the bigger gun.",
     requires: null,
     playable: true,
     travel: false,
@@ -369,28 +383,28 @@ export const DESTINATIONS: Destination[] = [
     late: ["elk", "train-car", "espresso-cart", "driver"],
     wide: ["train-car"],
     fast: ["hail"],
-    obstacle: "luggage",
+    obstacle: "tires",
     fodder: ["herd-goat", "herd-hare", "herd-lamb", "herd-boar"],
     pairs: coloradoPairs,
     coachOffer: weapon("espresso"),
     boss: "pass-goat",
     minis: ["hail-ram", "toll-elk"],
-    bossTitle: "THE PASS GOAT",
-    bossSub: "She has the right of way.",
+    bossTitle: "THE PASS BRUTE",
+    bossSub: "It has the right of way.",
     miniTitles: [
-      { title: "HAIL RAM", sub: "The weather filed a complaint." },
-      { title: "TOLL ELK", sub: "Exact change, or else." },
+      { title: "HAIL BRUTE", sub: "The weather brought friends." },
+      { title: "TOLL BRUTE", sub: "It wants what you are carrying." },
     ],
-    win: ["The pass is open.", "She blinks first. Barely."],
-    lose: ["The goat keeps the lane.", "You merged like you meant it."],
-    timeout: ["Her clock, not yours.", "The pass closes for weather. The weather is her."],
-    nextBlurb: "Maryland is open. Crabs, harbor traffic, opinions about pavement.",
+    win: ["The pass is open.", "They stop coming. For now."],
+    lose: ["The horde keeps the lane.", "You merged into them."],
+    timeout: ["Their clock, not yours.", "The pass closes. They are still in it."],
+    nextBlurb: "Maryland is open. Harbor traffic, and whatever came off the boats.",
   },
   {
     id: "maryland",
     name: "Maryland",
     region: "The harbor",
-    blurb: "Blue crabs, bridge traffic, and potholes with seniority.",
+    blurb: "Harbor outbreak. Bridge traffic, and potholes with seniority.",
     requires: "colorado",
     playable: true,
     travel: false,
@@ -403,21 +417,21 @@ export const DESTINATIONS: Destination[] = [
     late: ["skiff", "spice-shaker", "honk", "blue-crab"],
     wide: ["skiff"],
     fast: ["honk"],
-    obstacle: "pothole",
+    obstacle: "tires",
     fodder: ["herd-crab", "herd-gull", "herd-hare"],
     pairs: marylandPairs,
     coachOffer: weapon("ferry-horn"),
     boss: "mallet-crab",
     minis: ["bridge-gull", "pothole-king"],
-    bossTitle: "THE MALLET CRAB",
-    bossSub: "Seasoning is a weapon if you commit.",
+    bossTitle: "THE HARBOR BRUTE",
+    bossSub: "It learned the swing on the docks.",
     miniTitles: [
-      { title: "BRIDGE GULL", sub: "It wants the fries you do not have." },
-      { title: "POTHOLE KING", sub: "This one has a mailing address." },
+      { title: "BRIDGE REACHER", sub: "Long arms. Worse manners." },
+      { title: "POTHOLE BRUTE", sub: "This one has a mailing address." },
     ],
-    win: ["The harbor blinks first.", "The mallet goes back in the skiff."],
-    lose: ["The crab keeps swinging.", "Mind the gap. And the claw."],
-    timeout: ["The crab is late and still won.", "The swing clock runs out."],
+    win: ["The harbor blinks first.", "The lane is yours until the next bridge."],
+    lose: ["The horde keeps swinging.", "Mind the gap. And the arms."],
+    timeout: ["They are late and still won.", "The swing clock runs out."],
     nextBlurb: "Pennsylvania is next on the line. That round is not in yet.",
   },
   {

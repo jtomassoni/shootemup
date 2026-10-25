@@ -35,7 +35,8 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    // Phones stamp attributes onto <html> before hydration.
+    <html lang="en" suppressHydrationWarning>
       <body>{children}</body>
     </html>
   );

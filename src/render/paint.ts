@@ -115,17 +115,37 @@ export function drawHud(
     const point = project(crate.x, crate.y);
     if (point.y < 70 || point.y > state.playerY - 24) continue;
     const comparison = compareOffer(state.weapon, crate.offer, state.companion);
-    drawPlate(ctx, style, point.x, point.y - 18, comparison.title, comparison.lines, comparison.footer, `${crate.hitsLeft} hits`);
+    drawPlate(ctx, style, point.x, point.y - 28, comparison.title, comparison.lines.slice(0, 1), "", `${crate.hitsLeft}`);
   }
   for (const floater of state.floaters) {
     const point = project(floater.x, floater.y);
     ctx.globalAlpha = Math.max(0, floater.life * 1.6);
-    inkText(ctx, floater.text, point.x, point.y, floater.kind === "bad" ? "#9b2226" : "#1c3144", 18, true);
+    const damage = floater.kind === "bad";
+    ctx.font = `800 ${damage ? 34 : 22}px ${FONT}`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.lineWidth = damage ? 6 : 4;
+    ctx.strokeStyle = damage ? "#fff6ea" : "#1c140c";
+    ctx.strokeText(floater.text, point.x, point.y);
+    ctx.fillStyle = damage ? "#ff2418" : "#fff4b0";
+    ctx.fillText(floater.text, point.x, point.y);
     ctx.globalAlpha = 1;
+  }
+  const heavy = state.enemies
+    .filter((enemy) => enemy.alive && enemy.maxHp >= 80 && enemy.sprite !== "tires")
+    .sort((a, b) => b.y - a.y)[0];
+  if (heavy) {
+    const ratio = Math.max(0, Math.min(1, heavy.hp / heavy.maxHp));
+    const barX = W / 2 - 92;
+    ctx.fillStyle = "rgba(28, 12, 12, 0.72)";
+    ctx.fillRect(barX, 16, 184, 16);
+    ctx.fillStyle = "#e10600";
+    ctx.fillRect(barX + 2, 18, 180 * ratio, 12);
+    inkText(ctx, String(Math.max(0, Math.ceil(heavy.hp))), W / 2, 24, "#fff8f2", 13, true);
   }
   drawHearts(ctx, 22, 28, state.hearts);
   const timer = timerLabel(state);
-  inkText(ctx, timer.text, W / 2, 36, timer.urgent ? "#9b2226" : "#1c3144", 22, true);
+  if (timer.text) inkText(ctx, timer.text, W / 2, 36, timer.urgent ? "#9b2226" : "#1c3144", 22, true);
   inkText(ctx, state.score.toLocaleString("en-US"), W - 22, 36, "#1c3144", 22, true, "right");
   if (state.chain > 1) {
     const chain = state.multiplier > 1 ? `x${state.multiplier}` : `chain ${state.chain}`;
@@ -155,7 +175,7 @@ function paintReadout(ctx: CanvasRenderingContext2D, state: RunState, style: Sty
   }
   drawHearts(ctx, 22, 28, state.hearts);
   const timer = timerLabel(state);
-  inkText(ctx, timer.text, W / 2, 34, timer.urgent ? "#9b2226" : "#1c3144", 22, true);
+  if (timer.text) inkText(ctx, timer.text, W / 2, 34, timer.urgent ? "#9b2226" : "#1c3144", 22, true);
   inkText(ctx, state.score.toLocaleString("en-US"), 22, 62, "#1c3144", 18, true, "left");
   if (state.chain > 0) {
     const chain = state.multiplier > 1 ? `x${state.multiplier}` : `chain ${state.chain}`;

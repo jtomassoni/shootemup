@@ -20,6 +20,17 @@ import {
 } from "./types";
 
 const MARGIN = 30;
+/** Widest aim off straight ahead, in radians. Kept modest so the edges of the screen do not fling shots off the road. */
+export const AIM_LIMIT = 0.68;
+
+export function aimFromPointer(pointerX: number): number {
+  const span = clamp((pointerX - W / 2) / (W / 2), -1, 1);
+  return span * AIM_LIMIT;
+}
+
+export function pointerFromAim(angle: number): number {
+  return W / 2 + clamp(angle / AIM_LIMIT, -1, 1) * (W / 2);
+}
 
 export function createRun(options: {
   seed: number;
@@ -49,6 +60,7 @@ export function createRun(options: {
     bossTimeLeft: null,
     playerX: W / 2,
     playerY: PLAYER_Y,
+    aim: 0,
     lean: 0,
     hearts: 3,
     iframes: 0.45,
@@ -103,12 +115,7 @@ export function timerLabel(state: RunState): { text: string; urgent: boolean } {
   if (state.phase === "boss" && state.bossTimeLeft != null) {
     return { text: `Boss ${Math.ceil(state.bossTimeLeft)}`, urgent: state.bossTimeLeft < 8 };
   }
-  if (state.phase === "intro") return { text: "Boss", urgent: false };
-  const next = state.setpieces[state.setpieceIndex];
-  if (!next) return { text: "", urgent: false };
-  const left = Math.max(0, next.at - state.waveTime);
-  const seconds = Math.ceil(left);
-  return { text: `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`, urgent: false };
+  return { text: "", urgent: false };
 }
 
 function tick(state: RunState, dt: number, input: Input) {
@@ -126,16 +133,15 @@ function tick(state: RunState, dt: number, input: Input) {
   for (const ring of state.rings) ring.life -= dt;
   state.rings = state.rings.filter((ring) => ring.life > 0).slice(-16);
 
-  const previousX = state.playerX;
+  state.playerX = W / 2;
   if (input.pointerX != null) {
-    const target = clamp(input.pointerX, MARGIN, W - MARGIN);
-    state.playerX += (target - state.playerX) * Math.min(1, dt * 16);
+    const target = aimFromPointer(clamp(input.pointerX, MARGIN, W - MARGIN));
+    state.aim += (target - state.aim) * Math.min(1, dt * 8);
   } else if (input.left || input.right) {
     const direction = (input.right ? 1 : 0) - (input.left ? 1 : 0);
-    state.playerX = clamp(state.playerX + direction * 340 * dt, MARGIN, W - MARGIN);
+    state.aim = clamp(state.aim + direction * 1.5 * dt, -AIM_LIMIT, AIM_LIMIT);
   }
-  const leanTarget = clamp((state.playerX - previousX) / 8, -1, 1);
-  state.lean += (leanTarget - state.lean) * Math.min(1, dt * 10);
+  state.lean = clamp(state.aim / AIM_LIMIT, -1, 1);
 
   if (state.phase === "waves") {
     state.waveTime += dt;
@@ -170,6 +176,7 @@ function tick(state: RunState, dt: number, input: Input) {
     crate.y += crate.vy * dt;
     if (crate.y > H + 50) crate.alive = false;
   }
+  assignClosers(state);
   for (const enemy of state.enemies) {
     if (!enemy.alive) continue;
     enemy.age += dt;
@@ -195,6 +202,20 @@ function tick(state: RunState, dt: number, input: Input) {
   state.bullets = state.bullets.filter((bullet) => bullet.alive && bullet.y > -120 && bullet.y < H + 140 && bullet.x > -80 && bullet.x < W + 80);
   state.enemies = state.enemies.filter((enemy) => enemy.alive);
   state.crates = state.crates.filter((crate) => crate.alive);
+  if (laneIsClear(state)) win(state);
+}
+
+function laneIsClear(state: RunState): boolean {
+  return (
+    state.status === "running" &&
+    state.phase === "waves" &&
+    state.setpieceIndex >= state.setpieces.length &&
+    state.events.length > 0 &&
+    state.eventIndex >= state.events.length &&
+    state.enemies.length === 0 &&
+    state.crates.length === 0 &&
+    !state.bullets.some((bullet) => bullet.from === "enemy")
+  );
 }
 
 function spawnDue(state: RunState) {
@@ -242,7 +263,8 @@ function weapons(state: RunState, dt: number) {
     state.swing = clamp(state.windup / Math.max(0.05, state.weapon.windup), 0, 1);
     if (state.windup <= 0) {
       state.swing = 0;
-      fireWeapon(state, state.weapon, state.playerX, state.playerY - 34);
+      const muzzle = shotOrigin(state, 34);
+      fireWeapon(state, state.weapon, muzzle.x, muzzle.y);
       state.muzzle = 0.14;
       state.pings.push(state.weapon.projectile === "mallet" ? "mallet" : "shot");
     }
@@ -254,7 +276,8 @@ function weapons(state: RunState, dt: number) {
       state.swing = 1;
       state.fireCooldown = state.weapon.fireInterval;
     } else {
-      fireWeapon(state, state.weapon, state.playerX, state.playerY - 34);
+      const muzzle = shotOrigin(state, 34);
+      fireWeapon(state, state.weapon, muzzle.x, muzzle.y);
       state.fireCooldown = state.weapon.fireInterval;
       state.muzzle = 0.07;
       state.pings.push("shot");
@@ -264,10 +287,18 @@ function weapons(state: RunState, dt: number) {
     state.buddyCooldown -= dt;
     if (state.buddyCooldown <= 0) {
       const buddy = weaponById("trail-pistol");
-      fireWeapon(state, { ...buddy, pelletDamage: 8, color: "#7bdff2" }, state.playerX + 36 * (state.lean >= 0 ? 1 : -1), state.playerY - 18);
+      const buddyMuzzle = shotOrigin(state, 18);
+      fireWeapon(state, { ...buddy, pelletDamage: 8, color: "#7bdff2" }, buddyMuzzle.x + 36 * (state.aim >= 0 ? 1 : -1), buddyMuzzle.y);
       state.buddyCooldown = 0.24;
     }
   }
+}
+
+function shotOrigin(state: RunState, reach: number) {
+  return {
+    x: state.playerX + Math.sin(state.aim) * reach,
+    y: state.playerY - Math.cos(state.aim) * reach,
+  };
 }
 
 function fireWeapon(state: RunState, weapon: Weapon, x: number, y: number) {
@@ -276,7 +307,7 @@ function fireWeapon(state: RunState, weapon: Weapon, x: number, y: number) {
   const pellets = weapon.pellets;
   for (let i = 0; i < pellets; i += 1) {
     const t = pellets === 1 ? 0 : (i / (pellets - 1)) * 2 - 1;
-    const angle = t * (weapon.spread / 2);
+    const angle = state.aim + t * (weapon.spread / 2);
     const speed = weapon.projectileSpeed;
     const vx = Math.sin(angle) * speed;
     const vy = -Math.cos(angle) * speed;
@@ -327,6 +358,9 @@ function moveEnemy(state: RunState, enemy: Enemy, dt: number) {
     if (enemy.y > H + 40) enemy.alive = false;
     return;
   }
+  // Keep closing on the player until the last moment, from either side.
+  // A fixed lane left a safe column in the middle of the screen.
+  closeOnPlayer(state, enemy, dt);
   if (enemy.pattern === "weave") {
     enemy.y += enemy.vy * dt;
     enemy.x = clamp(enemy.originX + Math.sin(enemy.age * 2.5) * 38, enemy.hw + 8, W - enemy.hw - 8);
@@ -419,6 +453,46 @@ function shootRocks(state: RunState, enemy: Enemy) {
   for (const x of [46, W - 46]) {
     spawnEnemyShot(state, x, enemy.y + 10, 0, speed, "rock", "#d7d3cb", 11);
   }
+}
+
+function assignClosers(state: RunState) {
+  const pending = state.enemies.filter(
+    (enemy) => enemy.alive && enemy.safeGap === 0 && enemy.kind !== "obstacle" && enemy.pattern !== "boss" && enemy.pattern !== "crab",
+  );
+  for (const enemy of pending) {
+    if (enemy.safeGap !== 0) continue;
+    const rank = pending.filter((other) => Math.abs(other.y - enemy.y) < 36);
+    const fragile = rank.filter((other) => other.pattern === "drift" && other.maxHp <= 12);
+    if (fragile.length === 0) {
+      for (const other of rank) other.safeGap = 2;
+      continue;
+    }
+    const pool = fragile;
+    pool.sort((a, b) => Math.abs(a.originX - state.playerX) - Math.abs(b.originX - state.playerX) || a.id - b.id);
+    const lead = pool[0];
+    for (const other of rank) other.safeGap = other === lead ? 1 : 2;
+  }
+}
+
+function closeOnPlayer(state: RunState, enemy: Enemy, dt: number) {
+  const lead = state.playerY - enemy.y;
+  // Keep steering until they are almost on the character. Stopping earlier
+  // left them close enough to touch and too far aside for a straight shot.
+  if (lead < 48) return;
+  const dx = state.playerX - enemy.originX;
+  const commit = enemy.safeGap === 1;
+  const sway = enemy.pattern === "weave" ? 42 : enemy.pattern === "elk" ? 30 : 0;
+  const minGap = enemy.hw + PLAYER_R + 20 + sway;
+  // One body from the rank walks onto the character, from whichever side it started.
+  // The others close in on their own side and stop short of the straight shot.
+  let slot = state.playerX;
+  if (!commit) {
+    if (Math.abs(dx) <= minGap) return;
+    slot = state.playerX - Math.sign(dx || 1) * minGap;
+  }
+  const next = enemy.originX + (slot - enemy.originX) * Math.min(1, dt * 1.5);
+  enemy.originX = clamp(next, enemy.hw + 8, W - enemy.hw - 8);
+  if (enemy.pattern === "drift" || enemy.pattern === "shooter") enemy.x = enemy.originX;
 }
 
 function shootBlob(state: RunState, enemy: Enemy) {
@@ -541,6 +615,9 @@ function damageEnemy(state: RunState, enemy: Enemy, amount: number) {
   if (!enemy.alive || enemy.dormant || !enemy.shootable) return;
   enemy.hp -= amount;
   enemy.flash = 0.08;
+  if (enemy.maxHp >= 80 && enemy.sprite !== "tires") {
+    floater(state, enemy.x, enemy.y - enemy.hh * 0.4, String(Math.round(amount)), "bad");
+  }
   if (enemy.hp <= 0) killEnemy(state, enemy);
 }
 

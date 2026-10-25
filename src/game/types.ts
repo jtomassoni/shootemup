@@ -209,6 +209,8 @@ export type RunState = {
   bossTimeLeft: number | null;
   playerX: number;
   playerY: number;
+  /** Radians off straight up. Positive aims to the right. */
+  aim: number;
   lean: number;
   hearts: number;
   iframes: number;

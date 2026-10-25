@@ -1,9 +1,10 @@
 import { destinationById, type Destination } from "./content";
-import { clamp, laneCenter, laneX } from "./geometry";
+import { laneCenter, laneX } from "./geometry";
 import { pick } from "./rng";
 import type { FormatId, Offer, Schedule, SpawnEvent } from "./types";
 
-const PUSH_BOSS_AT = 86;
+/** How long the enemy schedule lasts. The round ends when those enemies are gone. */
+const ROUND_SECONDS = 90;
 
 export function buildSchedule(
   rand: () => number,
@@ -14,40 +15,9 @@ export function buildSchedule(
   const destination = destinationById(destinationId);
   const events: SpawnEvent[] = [];
   const memory = { buddy: false, pair: 1 };
-
-  if (format === "push") {
-    fillWaves(rand, destination, events, memory, 1.35, PUSH_BOSS_AT - 1.15, coach);
-    return finish(rand, destination, events, [
-      {
-        at: PUSH_BOSS_AT,
-        archetype: destination.boss,
-        final: true,
-        limit: 30,
-        title: destination.bossTitle,
-        sub: destination.bossSub,
-      },
-    ]);
-  }
-
-  const marks = [
-    { at: 22, archetype: destination.minis[0]!, final: false, limit: 18, title: destination.miniTitles[0]! },
-    { at: 44, archetype: destination.minis[1]!, final: false, limit: 18, title: destination.miniTitles[1]! },
-    { at: 66, archetype: destination.boss, final: true, limit: 30, title: { title: destination.bossTitle, sub: destination.bossSub } },
-  ];
-  let from = 1.2;
-  const setpieces = marks.map((mark, index) => {
-    fillWaves(rand, destination, events, memory, from, mark.at - 1.05, coach && index === 0);
-    from = mark.at + 0.35;
-    return {
-      at: mark.at,
-      archetype: mark.archetype,
-      final: mark.final,
-      limit: mark.limit,
-      title: mark.title.title,
-      sub: mark.title.sub,
-    };
-  });
-  return finish(rand, destination, events, setpieces);
+  const start = format === "gauntlet" ? 1.2 : 1.35;
+  fillWaves(rand, destination, events, memory, start, ROUND_SECONDS, coach);
+  return finish(rand, destination, events, []);
 }
 
 function finish(
@@ -83,7 +53,7 @@ function fillWaves(
     events.push({
       t: start + 1.3,
       type: "banner",
-      title: "Shoot the crate you want",
+      title: "Shoot the gun you want",
       sub: "The other one leaves when you take one.",
     });
     events.push({
@@ -96,7 +66,6 @@ function fillWaves(
     t = start + 4;
   }
 
-  const gap = { lane: 2 };
   while (t < end) {
     if (t >= nextCrate && t < end - 1.8) {
       const [left, right] = pickPair(rand, destination, memory.buddy);
@@ -114,22 +83,17 @@ function fillWaves(
     const pressure = (t - start) / Math.max(1, end - start);
     const columns = columnsFor(pressure);
     const width = gapWidth(columns);
-    const inset = 2;
-    const gapMax = Math.max(inset, columns - width - inset);
-    if (rand() < 0.08) {
-      gap.lane = clamp(gap.lane + (rand() < 0.5 ? -1 : 1), inset, gapMax);
-    } else {
-      gap.lane = clamp(gap.lane, inset, gapMax);
-    }
-    events.push(...crowdRank(rand, destination, t, columns, gap.lane, width));
-    const flank = gap.lane > (columns - width) / 2 ? 0 : columns - 1;
+    const gapLane = centerGap(columns, width);
+    events.push(...crowdRank(rand, destination, t, columns, gapLane, width));
+    const flank = rand() < 0.5 ? 0 : columns - 1;
     const elitePool = pressure < 0.34 ? destination.early : pressure < 0.68 ? destination.mid : destination.late;
     const elites = elitePool.filter((id) => !destination.wide.includes(id));
-    if (elites.length > 0 && rand() < 0.42) {
+    if (elites.length > 0 && rand() < 0.42 && t + 0.05 <= end) {
       events.push({ t: t + 0.05, type: "mob", archetype: pick(rand, elites), x: laneX(flank, columns) });
     }
-    if (rand() < 0.1 && pressure > 0.18) {
-      events.push({ t: t + 0.09, type: "mob", archetype: destination.obstacle, x: laneX(flank, columns) });
+    if (rand() < 0.16 && pressure > 0.16 && t + 0.2 <= end) {
+      events.push({ t: t + 0.18, type: "mob", archetype: destination.obstacle, x: laneCenter(0) });
+      events.push({ t: t + 0.18, type: "mob", archetype: destination.obstacle, x: laneCenter(4) });
     }
     const spacing = pressure < 0.28 ? 1.05 : pressure < 0.62 ? 0.48 : 0.26;
     t += spacing;
@@ -153,6 +117,11 @@ function columnsFor(pressure: number): number {
 
 function gapWidth(columns: number): number {
   return columns >= 12 ? 4 : 3;
+}
+
+/** The shooter holds the middle, so the open columns stay over them. */
+function centerGap(columns: number, width: number): number {
+  return Math.max(0, Math.round((columns - width) / 2));
 }
 
 function crowdRank(
