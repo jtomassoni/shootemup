@@ -1,10 +1,9 @@
 import { AVATARS, DESTINATIONS, destinationById } from "./content";
-import type { Bucket, FormatId, StyleId } from "./types";
+import type { Bucket, FormatId } from "./types";
 
 export type Save = {
   version: 1;
   avatarId: string;
-  style: StyleId;
   format: FormatId;
   muted: boolean;
   music: boolean;
@@ -25,7 +24,6 @@ export function defaultSave(): Save {
   return {
     version: 1,
     avatarId: "nurse",
-    style: "chunky",
     format: "push",
     muted: false,
     music: false,
@@ -44,15 +42,16 @@ export function defaultSave(): Save {
 export function sanitizeSave(value: unknown): Save {
   const base = defaultSave();
   if (!value || typeof value !== "object") return base;
-  const raw = value as Partial<Save>;
+  const raw = value as Partial<Save> & { style?: unknown };
   const avatarId = AVATARS.some((avatar) => avatar.id === raw.avatarId) ? raw.avatarId! : base.avatarId;
-  const style = raw.style === "pixel" || raw.style === "illustrated" || raw.style === "chunky" ? raw.style : base.style;
+  // Older saves carried an art style. There is one look now.
+  const { style: _legacyStyle, ...rest } = raw;
+  void _legacyStyle;
   return {
     ...base,
-    ...raw,
+    ...rest,
     version: 1,
     avatarId,
-    style,
     format: raw.format === "gauntlet" ? "gauntlet" : "push",
     muted: Boolean(raw.muted),
     music: Boolean(raw.music),

@@ -313,7 +313,6 @@ export function Shell() {
           <PlayField
             run={runRef.current}
             runId={runId}
-            style={levelCoat(destination).style}
             avatar={avatar}
             muted={save.muted}
             music={save.music}

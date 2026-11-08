@@ -3,7 +3,6 @@ export const H = 844;
 export const PLAYER_Y = 742;
 export const PLAYER_R = 16;
 
-export type StyleId = "chunky" | "pixel" | "illustrated";
 export type FormatId = "push" | "gauntlet";
 export type Bucket = "free" | "daily";
 export type Phase = "waves" | "intro" | "boss";

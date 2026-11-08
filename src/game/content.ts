@@ -1,15 +1,9 @@
-import type { Archetype, FormatId, Offer, StyleId, Weapon } from "./types";
+import type { Archetype, FormatId, Offer, Weapon } from "./types";
 
 export const GAME_TITLE = "Hold the Lane";
 export const GAME_TAGLINE = "One finger. The lane is not yours yet.";
 export const GAME_DESCRIPTION =
   "A short portrait shooter. Hold the center, aim with one thumb, and grab the ridiculous weapon before it gets away.";
-
-export const STYLES: { id: StyleId; name: string; blurb: string }[] = [
-  { id: "chunky", name: "Chunky", blurb: "Toy-bright and oversized." },
-  { id: "pixel", name: "Pixel", blurb: "Hard pixels, small sprites." },
-  { id: "illustrated", name: "Illustrated", blurb: "Ink outlines, comic hits." },
-];
 
 export const FORMATS: { id: FormatId; name: string; blurb: string }[] = [
   { id: "push", name: "Push", blurb: "About ninety seconds of the lane." },
@@ -560,11 +554,10 @@ export const DESTINATIONS: Destination[] = [
   },
 ];
 
-/** Each stop wears the next look and the next round. Nobody picks them. */
-export function levelCoat(destinationId: string): { style: StyleId; format: FormatId } {
+/** Each stop wears the next round format. Nobody picks it. */
+export function levelCoat(destinationId: string): { format: FormatId } {
   const index = Math.max(0, DESTINATIONS.findIndex((item) => item.id === destinationId));
   return {
-    style: STYLES[index % STYLES.length]!.id,
     format: FORMATS[index % FORMATS.length]!.id,
   };
 }

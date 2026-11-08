@@ -5,7 +5,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "tsx --test tests/*.test.ts"
+    "test": "tsx --test tests/*.test.ts",
+    "assets:textures": "node scripts/fetch-assets.mjs",
+    "assets:characters": "node scripts/convert-mixamo.mjs"
   },
   "dependencies": {
     "next": "^15.5.6",
@@ -14,10 +16,17 @@
     "three": "^0.170.0"
   },
   "devDependencies": {
+    "@gltf-transform/cli": "^4.5.1",
+    "@gltf-transform/core": "^4.5.1",
+    "@gltf-transform/extensions": "^4.5.1",
+    "@gltf-transform/functions": "^4.5.1",
     "@types/node": "^20.17.10",
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.9",
     "@types/three": "^0.170.0",
+    "fbx2gltf": "^0.9.7-p1",
+    "meshoptimizer": "~0.18.1",
+    "sharp": "^0.35.5",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2"
   }

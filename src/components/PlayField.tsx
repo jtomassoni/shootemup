@@ -5,12 +5,11 @@ import { Sfx, type Ping } from "@/audio/sfx";
 import type { LaneStage } from "@/render/stage";
 import type { Avatar } from "@/game/content";
 import { step } from "@/game/sim";
-import { H, W, type Input, type RunState, type StyleId } from "@/game/types";
+import { H, W, type Input, type RunState } from "@/game/types";
 
 export function PlayField({
   run,
   runId,
-  style,
   avatar,
   muted,
   music,
@@ -21,7 +20,6 @@ export function PlayField({
 }: {
   run: RunState;
   runId: number;
-  style: StyleId;
   avatar: Avatar;
   muted: boolean;
   music: boolean;
@@ -37,11 +35,9 @@ export function PlayField({
   const [booting, setBooting] = useState(true);
   const inputRef = useRef<Input>({ pointerX: null, left: false, right: false });
   const pausedRef = useRef(paused);
-  const styleRef = useRef(style);
   const avatarRef = useRef(avatar);
   const hitboxRef = useRef(showHitboxes);
   const doneRef = useRef(false);
-  styleRef.current = style;
   avatarRef.current = avatar;
   hitboxRef.current = showHitboxes;
   const sfxRef = useRef<Sfx | null>(null);
@@ -109,7 +105,6 @@ export function PlayField({
       }
       view?.render(
         run,
-        styleRef.current,
         avatarRef.current,
         hitboxRef.current,
         window.matchMedia("(prefers-reduced-motion: reduce)").matches,
